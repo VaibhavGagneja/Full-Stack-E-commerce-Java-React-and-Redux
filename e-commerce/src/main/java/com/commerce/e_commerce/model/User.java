@@ -21,6 +21,7 @@ public class User {
     private Long id;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
+    
     private String email;
     private String fullName;
     private String phoneNumber;

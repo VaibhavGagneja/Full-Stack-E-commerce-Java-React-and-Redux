@@ -3,9 +3,11 @@ package com.commerce.e_commerce.service.impl;
 import com.commerce.e_commerce.config.JwtProvider;
 import com.commerce.e_commerce.domain.USER_ROLE;
 import com.commerce.e_commerce.model.Cart;
+import com.commerce.e_commerce.model.Seller;
 import com.commerce.e_commerce.model.User;
 import com.commerce.e_commerce.model.VerificationCode;
 import com.commerce.e_commerce.repository.CartRepository;
+import com.commerce.e_commerce.repository.SellerRepository;
 import com.commerce.e_commerce.repository.UserRepository;
 import com.commerce.e_commerce.repository.VerificationCodeRepository;
 import com.commerce.e_commerce.request.LoginRequest;
@@ -15,16 +17,19 @@ import com.commerce.e_commerce.service.AuthService;
 import com.commerce.e_commerce.service.EmailService;
 import com.commerce.e_commerce.util.OtpUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +40,10 @@ public class AuthServiceImpl implements AuthService {
     private final JwtProvider jwtProvider;
     private final VerificationCodeRepository verificationCodeRepository;
     private final EmailService emailService;
+    private final CustomUserServiceImpl customUserService;
+    private final SellerRepository sellerRepository;
+
+    //    private final PasswordEncoder passwordEncoder2;
     @Override
     public String createUser(SignupRequest req) throws Exception {
 
@@ -68,18 +77,27 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void sendLoginOtp(String email)  throws Exception {
+    public void sendLoginOtp(String email, USER_ROLE role) throws Exception {
         String SIGNIN_PREFIX = "signin_";
+//        String SELLER_PREFIX = "seller_";
 
-        if(email.startsWith(SIGNIN_PREFIX)){
+        if (email.startsWith(SIGNIN_PREFIX)) {
             email = email.substring(SIGNIN_PREFIX.length());
-            User user = userRepository.findByEmail(email);
-            if(user == null){
-                throw new Exception("User not found with email: " + email);
+            if(role.equals(USER_ROLE.ROLE_SELLER)){
+                Seller seller = sellerRepository.findByEmail(email);
+                if (seller == null) {
+                    throw new Exception("Seller not found with email: " + email);
+                }
+            } else {
+                User user = userRepository.findByEmail(email);
+                if (user == null) {
+                    throw new Exception("User not found with email: " + email);
+                }
             }
+
         }
         VerificationCode isExist = verificationCodeRepository.findByEmail(email);
-        if(isExist != null){
+        if (isExist != null) {
             verificationCodeRepository.delete(isExist);
         }
         String otp = OtpUtil.generateOtp();
@@ -92,19 +110,42 @@ public class AuthServiceImpl implements AuthService {
         String subject = "Your Login OTP Code";
         String body = "Your OTP code for login is: " + otp + ". It is valid for 10 minutes.";
 
-        emailService.sendVerificationOtpEmail(email,otp,subject,body);
+        emailService.sendVerificationOtpEmail(email, otp, subject, body);
     }
 
     @Override
-    public AuthResponse validateOtp(LoginRequest req) throws Exception {
+    public AuthResponse signIn(LoginRequest req) throws Exception {
         String username = req.getEmail();
         String otp = req.getOtp();
-        
+
         Authentication authentication = authenticate(username, otp);
-        return null;
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        String token = jwtProvider.generateToken(authentication);
+        AuthResponse authResponse = new AuthResponse();
+        authResponse.setJwt(token);
+        authResponse.setMessage("Login Successful");
+        Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
+        String roleName = authorities.isEmpty() ? null : authorities.iterator().next().getAuthority();
+        authResponse.setRole(USER_ROLE.valueOf(roleName));
+
+        return authResponse;
     }
 
     private Authentication authenticate(String username, String otp) {
-        return null;
+        UserDetails userDetails = customUserService.loadUserByUsername(username);
+        String SELLER_PREFIX = "seller_";
+        if(username.startsWith(SELLER_PREFIX)){
+            username=username.substring(SELLER_PREFIX.length());
+        }
+        if (userDetails == null) {
+            throw new BadCredentialsException("User not found " + username);
+        }
+
+        VerificationCode verificationCode = verificationCodeRepository.findByEmail(username);
+        if (verificationCode == null || !verificationCode.getOtp().equals(otp)) {
+            throw new BadCredentialsException("No Otp not found or wrong Otp ");
+        }
+
+        return new UsernamePasswordAuthenticationToken(username, null, userDetails.getAuthorities());
     }
 }

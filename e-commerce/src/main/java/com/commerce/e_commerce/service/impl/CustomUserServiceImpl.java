@@ -11,7 +11,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -27,24 +26,26 @@ public class CustomUserServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        if(username.startsWith(SELLER_PREFIX)){
+        if (username.startsWith(SELLER_PREFIX)) {
             String actualUsername = username.substring(SELLER_PREFIX.length());
             Seller seller = sellerRepository.findByEmail(actualUsername);
 
-            if(seller!= null){
-                return buildUserDetails(seller.getEmail(),seller.getPassword(),seller.getRole());
+            if (seller != null) {
+                return buildUserDetails(seller.getEmail(), seller.getPassword(), seller.getRole());
             }
-        }else{
+        } else {
             User user = userRepository.findByEmail(username);
-            if(user != null){ return buildUserDetails(user.getEmail(),user.getPassword(),user.getRole()); }
+            if (user != null) {
+                return buildUserDetails(user.getEmail(), user.getPassword(), user.getRole());
+            }
         }
         throw new UsernameNotFoundException("User or seller not found with email : " + username);
     }
 
-    private UserDetails buildUserDetails(String email, String password, Enum role){
-        if(role==null) role = USER_ROLE.ROLE_CUSTOMER;
+    private UserDetails buildUserDetails(String email, String password, Enum role) {
+        if (role == null) role = USER_ROLE.ROLE_CUSTOMER;
         List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
-        grantedAuthorities.add(new SimpleGrantedAuthority("Role_"+role.toString()));
-        return new org.springframework.security.core.userdetails.User(email,password,grantedAuthorities);
+        grantedAuthorities.add(new SimpleGrantedAuthority(role.toString()));
+        return new org.springframework.security.core.userdetails.User(email, password, grantedAuthorities);
     }
 }
