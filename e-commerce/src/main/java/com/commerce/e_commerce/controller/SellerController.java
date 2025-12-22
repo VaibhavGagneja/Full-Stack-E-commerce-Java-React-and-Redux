@@ -1,14 +1,17 @@
 package com.commerce.e_commerce.controller;
 
+import com.commerce.e_commerce.config.JwtProvider;
 import com.commerce.e_commerce.domain.AccountStatus;
 import com.commerce.e_commerce.exception.SellerException;
 import com.commerce.e_commerce.model.Seller;
+import com.commerce.e_commerce.model.SellerReport;
 import com.commerce.e_commerce.model.VerificationCode;
 import com.commerce.e_commerce.repository.VerificationCodeRepository;
 import com.commerce.e_commerce.request.LoginRequest;
 import com.commerce.e_commerce.response.AuthResponse;
 import com.commerce.e_commerce.service.AuthService;
 import com.commerce.e_commerce.service.EmailService;
+import com.commerce.e_commerce.service.SellerReportService;
 import com.commerce.e_commerce.service.SellerService;
 import com.commerce.e_commerce.util.OtpUtil;
 import jakarta.mail.MessagingException;
@@ -27,6 +30,7 @@ public class SellerController {
     private final VerificationCodeRepository verificationCodeRepository;
     private final AuthService authService;
     private final EmailService emailService;
+    private final SellerReportService sellerReportService;
 
 
     @PostMapping("/login")
@@ -88,14 +92,13 @@ public class SellerController {
 
     }
 
-//    @GetMapping("/report")
-//    public ResponseEntity<SellerReport> getSellerReport(
-//            @RequestHeader("Authorization") String jwt) throws SellerException {
-//        String email = jwtProvider.getEmailFromJwtToken(jwt);
-//        Seller seller = sellerService.getSellerByEmail(email);
-//        SellerReport report = sellerReportService.getSellerReport(seller);
-//        return new ResponseEntity<>(report, HttpStatus.OK);
-//    }
+    @GetMapping("/report")
+    public ResponseEntity<SellerReport> getSellerReport(
+            @RequestHeader("Authorization") String jwt) throws Exception {
+        Seller seller = sellerService.getSellerProfile(jwt);
+        SellerReport report = sellerReportService.getSellerReport(seller);
+        return new ResponseEntity<>(report, HttpStatus.OK);
+    }
 
     @GetMapping
     public ResponseEntity<List<Seller>> getAllSellers(
