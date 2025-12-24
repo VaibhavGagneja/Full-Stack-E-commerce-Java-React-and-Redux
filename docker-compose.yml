@@ -1,0 +1,44 @@
+services:
+  backend:
+    build: ./e-commerce
+    container_name: ecommerce-backend
+    ports:
+      - "5454:5454"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/ecommerce_db
+      - SPRING_DATASOURCE_USERNAME=ecommerce
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+    networks:
+      - ecommerce-network
+    restart: always
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: ecommerce-db
+    environment:
+      - POSTGRES_USER=ecommerce
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=ecommerce_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ecommerce -d ecommerce_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+networks:
+  ecommerce-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
