@@ -73,7 +73,7 @@ public class SellerController {
         String subject = "Ecommerce Market Email Verification Code";
         String text = "Welcome to Ecommerce Market, verify your account using this link ";
         String frontend_url = "http://localhost:3000/verify-seller/";
-        emailService.sendVerificationOtpEmail(seller.getEmail(), verificationCode.getOtp(), subject, text + frontend_url);
+        emailService.sendVerificationOtpEmail(seller.getEmail(), verificationCode.getOtp());
         return new ResponseEntity<>(savedSeller, HttpStatus.CREATED);
     }
 

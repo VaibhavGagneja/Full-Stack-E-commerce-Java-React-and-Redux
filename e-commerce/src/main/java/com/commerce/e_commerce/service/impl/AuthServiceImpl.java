@@ -110,7 +110,7 @@ public class AuthServiceImpl implements AuthService {
         String subject = "Your Login OTP Code";
         String body = "Your OTP code for login is: " + otp + ". It is valid for 10 minutes.";
 
-        emailService.sendVerificationOtpEmail(email, otp, subject, body);
+        emailService.sendVerificationOtpEmail(email, otp);
     }
 
     @Override

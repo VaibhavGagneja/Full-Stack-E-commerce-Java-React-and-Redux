@@ -4,7 +4,7 @@ services:
     env: docker
     region: oregon
     plan: free
-    branch: main
+    branch: master
     rootDir: e-commerce
     envVars:
       - key: PORT
@@ -20,6 +20,8 @@ services:
           name: ecommerce-db
           property: password
       - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_USERNAME
         sync: false
       - key: DB_HOST
         fromDatabase:
