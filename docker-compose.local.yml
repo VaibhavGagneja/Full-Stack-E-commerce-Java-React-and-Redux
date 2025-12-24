@@ -8,7 +8,8 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/ecommerce_db
+      # Use the External Render Database
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://dpg-d55pq1emcj7s73fg61i0-a.virginia-postgres.render.com:5432/ecommerce_db_0prt?sslmode=require
       - SPRING_DATASOURCE_USERNAME=ecommerce
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
@@ -30,7 +31,7 @@ services:
     networks:
       - ecommerce-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ecommerce -d ecommerce_db"]
+      test: [ "CMD-SHELL", "pg_isready -U ecommerce -d ecommerce_db" ]
       interval: 10s
       timeout: 5s
       retries: 5

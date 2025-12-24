@@ -15,6 +15,7 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode
+@Table(name = "users") // <--- ADD THIS LINE
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
